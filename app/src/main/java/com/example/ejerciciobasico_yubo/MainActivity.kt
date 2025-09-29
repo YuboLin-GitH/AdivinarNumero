@@ -1,6 +1,7 @@
 package com.example.ejerciciobasico_yubo
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -10,7 +11,11 @@ import kotlin.random.Random
 class MainActivity : AppCompatActivity() {
     private lateinit var  mibinding: ActivityMainBinding
 
-    val numInt = 5
+    private var numInt = 5
+    private var numMax = 10
+    private var numOculto = 0
+    private var intentos = 0
+    private var juegoActivo = false
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -26,124 +31,107 @@ class MainActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+        mibinding.numIntEditText.setText(numInt.toString())
+        mibinding.numMaxEditText.setText(numMax.toString())
 
-        main()
-        botonConfiguracion()
+        setupButtonListeners()
     }
 
 
-    private fun botonConfiguracion(){
-         mibinding.button.setOnClickListener {
-
+    private fun setupButtonListeners() {
+        // 配置按钮
+        mibinding.botonConfigurar.setOnClickListener {
+            configurarJuego()
         }
 
-    }
+        // 开始游戏按钮
+        mibinding.botonJugar.setOnClickListener {
+            iniciarJuego()
+        }
 
+        // 检查按钮
+        mibinding.botonConprobar.setOnClickListener {
+            comprobarAdivinanza()
+        }
 
-
-    fun main() {
-
-        var numInt = 5
-        var numMax = 10
-        var numOculto = 0
-
-
-
-
-        while (true) {
-            println("===== Menú del Juego =====")
-            println("1. Configurar")
-            println("2. Jugar")
-            println("3. Salir")
-            print("Selecciona una opción: ")
-
-
-            val opcion = readLine()?.toIntOrNull()
-            if (opcion == null) {
-                println("Entrada inválida, introduce un número (1, 2 o 3)")
-                continue
-            }
-
-
-            when (opcion) {
-                1 -> {
-
-                    println("--- Configuración ---")
-
-                    println("Introduce el número de intentos permitidos )=:")
-                    val nuevoNumInt = readLine()?.toIntOrNull()
-                    if (nuevoNumInt != null && nuevoNumInt > 0){
-                        numInt = nuevoNumInt
-                        println("Has cambiado número de intntos permididos a: $numInt")
-                    } else{
-                        println("Entrada inválida")
-                    }
-
-
-                    print("Introduce el número máximo generado : ")
-                    val nuevoNumMax = readLine()?.toIntOrNull()
-                    if (nuevoNumMax != null && nuevoNumMax > 0) {
-                        numMax = nuevoNumMax
-                        println("Has cambiado generado a: $numMax")
-                    } else {
-                        println("Entrada inválida")
-                    }
-                }
-
-                2 -> {
-
-                    numOculto = Random.nextInt(numMax + 1)
-                    var intentos = 0
-                    var haGanado = false
-
-                    println("\n--- Juego Iniciado ---")
-                    println("Adivina el número oculto entre 0 y $numMax. Tienes $numInt intentos.")
-
-
-                    while (intentos < numInt && !haGanado) {
-                        intentos++
-                        print("Intento $intentos: Introduce tu número: ")
-                        val adivinanza = readLine()?.toIntOrNull()
-
-                        if (adivinanza == null) {
-                            println("Entrada inválida. Por favor, introduce un número entero.")
-                            intentos--
-                            continue
-                        }
-
-
-                        when {
-                            adivinanza == numOculto -> {
-                                println("Has ganado!. Has necesitado $intentos intentos")
-                                haGanado = true
-                            }
-                            adivinanza < numOculto -> {
-                                println("El número oculto es menor")
-                            }
-                            else -> {
-                                println("El número oculto es mayor")
-                            }
-                        }
-                    }
-
-
-                    if (!haGanado) {
-                        println("Perdiste!. Intentos consumidos")
-                    }
-
-                    println("")
-                    println("")
-                }
-
-                3 -> {
-                    println("Programa finalizado.")
-                    return
-                }
-
-                else -> {
-                    println("Opción no válida. Por favor, selecciona 1, 2 o 3.")
-                }
-            }
+        // 退出按钮
+        mibinding.botonSalir.setOnClickListener {
+            finish()
         }
     }
+
+
+
+    private fun configurarJuego(){
+        val nuevoNumInt = mibinding.numIntEditText.text.toString().toIntOrNull()
+        val nuevoNumMax = mibinding.numMaxEditText.text.toString().toIntOrNull()
+
+        if (nuevoNumInt != null && nuevoNumInt > 0 && nuevoNumMax != null && nuevoNumMax > 0){
+            numInt = nuevoNumInt
+            numMax = nuevoNumMax
+            Toast.makeText(this, "Configuración actualizada", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(this, "Por favor, introduce valores válidos", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+
+
+    private fun iniciarJuego() {
+
+        numOculto = Random.nextInt(numMax + 1)
+        intentos = 0
+        juegoActivo = true
+
+        mibinding.numEditText.text.clear()
+        Toast.makeText(
+            this,
+            "Juego iniciado! Adivina el número entre 0 y $numMax",
+            Toast.LENGTH_LONG
+        ).show()
+    }
+
+
+    private fun comprobarAdivinanza() {
+        if (!juegoActivo) {
+            Toast.makeText(this, "Primero pulsa Jugar para empezar", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val adivinanza = mibinding.numEditText.text.toString().toIntOrNull()
+
+        if (adivinanza == null) {
+            Toast.makeText(this, "Por favor, introduce un número válido", Toast.LENGTH_SHORT).show()
+            return
+        }
+        intentos++
+
+        when {
+            adivinanza == numOculto -> {
+                // 猜对了
+                mibinding.resultadoTextView.text = "¡Has ganado! Has necesitado $intentos intentos"
+                juegoActivo = false
+            }
+            intentos >= numInt -> {
+                // 用完所有尝试次数
+                mibinding.resultadoTextView.text = "¡Perdiste! El número oculto era $numOculto"
+                juegoActivo = false
+            }
+            adivinanza < numOculto -> {
+                // 猜小了
+                mibinding.resultadoTextView.text = "El número oculto es mayor. Intentos restantes: ${numInt - intentos}"
+            }
+            else -> {
+                // 猜大了
+                mibinding.resultadoTextView.text = "El número oculto es menor. Intentos restantes: ${numInt - intentos}"
+            }
+        }
+
+        // 清空输入框以便下一次猜测
+        mibinding.numEditText.text.clear()
+
+
+
+    }
+
+
 }
